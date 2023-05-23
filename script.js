@@ -1,17 +1,45 @@
-{/* <div class="card mb-3">
-<div class="card-body">
-  <h5 class="card-title">Card title</h5>
-  <p class="card-text">With supporting text below as a natural lead-in to additional content.</p>
-  <a href="#" class="btn btn-primary">Button</a> */}
 var resultsEl = document.querySelector('#results');
+var resultTitle = document.querySelector('#result-title')
+var qInput = document.querySelector('#q');
+var formatInput = document.querySelector('#format');
+var searchForm = document.querySelector('#search-form');
 
-function searchTopic(topic, format) {
-    fetch('https://www.loc.gov/search/?q=baseball&fo=json')
+function handleSearchForm(event) {
+    event.preventDefault();
+
+    var q = qInput.value.trim();
+    var format = formatInput.value;
+
+    var searchParams = new URLSearchParams();
+    searchParams.append('q', q);
+    searchParams.append('format', format);
+
+    if (!resultsEl) {
+        document.location.replace('./search-results.html?' + searchParams.toString());
+    };
+
+    searchTopic(q, format)
+}
+
+function searchTopic(q, format) {
+    var apiUrl = 'https://www.loc.gov/search/?q=' + q + '&fo=json';
+
+    if (format) {
+        apiUrl = 'https://www.loc.gov/' + format + '/?q=' + q + '&fo=json';
+    };
+
+    fetch(apiUrl)
         .then(function (response) {
             return response.json();
         })
         .then(function (data) {
+            console.log(data);
             resultsEl.innerHTML = null;
+            resultTitle.textContent = qInput.value;
+            if (data.results.length === 0) {
+                resultsEl.textContent = "No Results Found";
+                return;
+            }
             for (var result of data.results) {
                 var cardEl = document.createElement('div');
                 var cardBody = document.createElement('div');
@@ -36,8 +64,17 @@ function searchTopic(topic, format) {
 }
 
 function init() {
-    searchTopic();
+    console.log('PARAMS', document.location.search);
+    var searchParams = new URLSearchParams(document.location.search);
+    var q = searchParams.get('q');
+    var format = searchParams.get('format');
+
+    if (q) {
+        qInput.value = q;
+        formatInput.value = format;
+        searchTopic(q, format);   
+    };
 }
 
-
-init();
+searchForm.addEventListener('submit', handleSearchForm);
+document.addEventListener('DOMContentLoaded', init);
